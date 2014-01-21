@@ -1,19 +1,4 @@
-
-
-YAJL_LOADED = begin   
-  require 'yajl'
-  true
-rescue LoadError
-  false
-end
-
-JSON_LOADED = begin
-  require 'json' unless YAJL_LOADED
-  true
-rescue LoadError
-  false
-end
-
+require 'multi_json'
 require 'yaml'
 require 'fileutils'
 require 'time'
@@ -353,14 +338,7 @@ class Storable
   def to_json(*from, &blk)
     preprocess if respond_to? :preprocess
     hash = to_hash
-    if YAJL_LOADED # set by Storable
-      ret = Yajl::Encoder.encode(hash)
-      ret
-    elsif JSON_LOADED
-      JSON.generate(hash, *from, &blk)
-    else 
-      raise "no JSON parser loaded"
-    end
+    ret = MultiJson.dump(hash)
   end
   
   def to_yaml(*from, &blk)
@@ -391,13 +369,7 @@ class Storable
     from_str = [from].flatten.compact.join('')
     #from_str.force_encoding("ISO-8859-1")
     #p [:from, from_str.encoding.name] if from_str.respond_to?(:encoding)
-    if YAJL_LOADED
-      tmp = Yajl::Parser.parse(from_str, :check_utf8 => false)
-    elsif JSON_LOADED
-      tmp = JSON::load(from_str)
-    else
-      raise "JSON parser not loaded"
-    end
+    tmp = MultiJson.load(from_str)
     hash_sym = tmp.keys.inject({}) do |hash, key|
        hash[key.to_sym] = tmp[key]
        hash
